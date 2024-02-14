@@ -46,6 +46,7 @@ public class Main extends Application {
     private static final Color WALL_COLOR = Color.BLACK;
     private static final Color PATH_COLOR_BF = Color.BLUE;
     private static final Color PATH_COLOR_DIJKSTRA = Color.RED;
+    private static final Color SHORTEST_PATH_COLOR = Color.YELLOW;
 
     @Override
     public void start(Stage primaryStage) {
@@ -56,11 +57,13 @@ public class Main extends Application {
 
         drawMaze(gc, maze);
 
-       // int[][] distancesBF = bellmanFord();
-      //  drawPath(gc, distancesBF, PATH_COLOR_BF);
+         int[][] distancesBF = bellmanFord();
+          drawPath(gc, distancesBF, PATH_COLOR_BF);
 
-         int[][] distancesDijkstra = dijkstra();
-          drawPath(gc, distancesDijkstra, PATH_COLOR_DIJKSTRA);
+       // int[][] distancesDijkstra = dijkstra();
+       // drawPath(gc, distancesDijkstra, PATH_COLOR_DIJKSTRA);
+
+
 
         StackPane root = new StackPane();
         root.getChildren().add(canvas);
@@ -69,7 +72,7 @@ public class Main extends Application {
         primaryStage.setTitle("Maze Solving");
         primaryStage.show();
 
-        System.out.println(Arrays.deepToString(distancesDijkstra));
+      //  System.out.println(Arrays.deepToString(distancesDijkstra));
 
     }
 
@@ -97,29 +100,32 @@ public class Main extends Application {
         for (int i = 0; i < WIDTH * HEIGHT - 1; i++) {
             for (int r = 1; r < HEIGHT; r++) {
                 for (int c = 1; c < WIDTH; c++) {
-                    if (maze[r][c] == 2){
-
-                    }
 
                     if (maze[r][c] == 0) {
                         //System.out.println("empty" + r +" "+ c);
                         if (r > 0 && distances[r-1][c] != Integer.MAX_VALUE && distances[r][c] + 1 < distances[r - 1][c]) {
                             distances[r][c] = distances[r-1][c] + 1;
                         }
-                        if (c > 0 && distances[r][c-1] != Integer.MAX_VALUE && distances[r][c] + 1 < distances[r][c - 1]) {
+                        else if (c > 0 && distances[r][c-1] != Integer.MAX_VALUE && distances[r][c] + 1 < distances[r][c - 1]) {
                             distances[r][c] = distances[r][c-1] + 1;
                         }
-                        if (r < HEIGHT-1 && distances[r+1][c] != Integer.MAX_VALUE && distances[r][c] + 1 < distances[r + 1][c]) {
+                        else if (r < HEIGHT-1 && distances[r+1][c] != Integer.MAX_VALUE && distances[r][c] + 1 < distances[r + 1][c]) {
                             distances[r][c] = distances[r+1][c] + 1;
                         }
-                        if (c < WIDTH-1 && distances[r][c+1] != Integer.MAX_VALUE && distances[r][c] + 1 < distances[r][c + 1]) {
+                        else if (c < WIDTH-1 && distances[r][c+1] != Integer.MAX_VALUE && distances[r][c] + 1 < distances[r][c + 1]) {
                             distances[r][c] = distances[r][c+1] + 1;
                         }
                     }
                 }
             }
         }
-        //System.out.println(Arrays.deepToString(distances));
+
+        /*for (int rr = 0; rr < HEIGHT; rr++) {
+            for (int cc = 0; cc < WIDTH; cc++) {
+                System.out.print(distances[rr][cc] + "  ");
+            }
+            System.out.println();
+        }*/
         return distances;
     }
 
@@ -167,6 +173,12 @@ public class Main extends Application {
     }
 
     private void drawPath(GraphicsContext gc, int[][] distances, Color pathColor) {
+        /*for (int rr = 0; rr < HEIGHT; rr++) {
+            for (int cc = 0; cc < WIDTH; cc++) {
+                System.out.print(distances[rr][cc] + "  ");
+            }
+            System.out.println();
+        }*/
         gc.setFill(pathColor);
         for (int r = 0; r < HEIGHT; r++) {
             for (int c = 0; c < WIDTH; c++) {
@@ -175,38 +187,50 @@ public class Main extends Application {
                 }
             }
         }
+        gc.setFill(SHORTEST_PATH_COLOR);
+        List<int[]> path = shortestPath(distances, 18, 1 );
+        for (int i = 0; i < path.size(); i++) {
+            gc.fillRect(path.get(i)[1] * 30, path.get(i)[0] * 30, 30, 30);
+        }
     }
 
-    private void shortestPath(int[][] distances, int r, int c){
+    private List<int[]> shortestPath(int[][] distances, int r, int c){
         int[][] directions = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
         List<int[]> coordinates = new ArrayList<>();
         coordinates.add(new int[]{r, c});
 
-        while () {
-            int[] cell = queue.poll();
-            int r = cell[0];
-            int c = cell[1];
-
-            if (visited[r][c]) {
-                continue;
+        while (true) {
+            if (r == 1 && c == 1){
+                break;
             }
-            visited[r][c] = true;
+            int minDistance = Integer.MAX_VALUE;
+            int minR = 0;
+            int minC = 0;
 
             for (int[] dir : directions) {
                 int newRow = r + dir[0];
                 int newCol = c + dir[1];
-                if (newRow >= 0 && newRow < HEIGHT && newCol >= 0 && newCol < WIDTH && maze[newRow][newCol] == 2){
-                    return distances;
-                }
                 if (newRow >= 0 && newRow < HEIGHT && newCol >= 0 && newCol < WIDTH && maze[newRow][newCol] == 0) {
-                    int newDist = distances[r][c] + 1;
-                    if (newDist < distances[newRow][newCol]) {
-                        distances[newRow][newCol] = newDist;
-                        queue.add(new int[]{newRow, newCol});
+                    if (minDistance > distances[newRow][newCol]){
+                        minC = newCol;
+                        minR = newRow;
+                        minDistance = distances[newRow][newCol];
                     }
                 }
             }
+
+            r = minR;
+            c = minC;
+            coordinates.add(new int[]{r, c});
+
+//            System.out.println(r + " " + c + " " + minDistance);
+//            for (int i = 0; i < coordinates.size(); i++) {
+//
+//                System.out.println(Arrays.toString(coordinates.get(i)));
+//            }
         }
+
+        return coordinates;
     }
 
     public static void main(String[] args) {
